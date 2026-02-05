@@ -8,5 +8,5 @@ image:
 network:
   host: mazer.4zb.org
   cert_issuer: letsencrypt-prod
-  cert_secret: ephemeral
+  cert_secret: mazer-tls
   ingress_class: nginx

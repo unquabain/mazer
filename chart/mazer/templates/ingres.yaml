@@ -20,5 +20,5 @@ spec:
         pathType: Prefix
   tls:
   - hosts:
-    - mazer.4zb.org
+    - {{ .Values.network.host }}
     secretName: {{ .Values.network.cert_secret }}
