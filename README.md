@@ -52,11 +52,18 @@ a `*Widget` as its first argument. There's also no way to get the C
 runtime to automatically call your destructor method when a variable
 goes out of scope. But if you adopt a convention such as:
 
-```c Widget *widget_new() { Widget *w = malloc(sizeof(Widget)); //
-initialize w return w; }
+```c
+Widget *widget_new() {
+    Widget *w = malloc(sizeof(Widget)); // initialize
+    w return w;
+}
 
-Widget *widget_delete(Widget *w) { if (w == NULL) { return NULL; } //
-free any memory owned by w free(w); return NULL; } ```
+Widget *widget_delete(Widget *w) {
+    if (w == NULL) { return NULL; } // free any memory owned by w
+    free(w);
+    return NULL;
+}
+```
 
 Then, you can call `widget_new()` and `w = widget_delete(w)` in place
 of `malloc` and `free`. After that, it becomes as tedious-but-trivial
