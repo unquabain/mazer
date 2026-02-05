@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Mazer 2</title>
+  <link data-trunk rel="rust" data-wasm-import-name="Mazer" data-wasm-opt="4"/>
+<style type="text/css">
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	font-family: Arial, sans-serif;
+}
+.wall {
+	fill: none;
+	stroke-width: 0.25;
+	stroke-linecap: round;
+	stroke: black;
+}
+.gateway {
+	fill: none;
+	stroke: none;
+}
+.gateway.display {
+	fill: none;
+	stroke-width: 1;
+	stroke-linecap: round;
+	stroke-dasharray: 1, 2;
+	stroke: #88AAFF;
+	opacity: 0.67;
+}
+.solution {
+	fill: none;
+	stroke: none;
+}
+.solution.display {
+	fill: #88DDFF;
+	opacity: 0.7;
+}
+.start {
+	fill: #00FF00;
+	opacity: 1.0;
+}
+.end {
+	fill: #FF0000;
+	opacity: 1.0;
+}
+.node {
+	fill: none;
+	stroke: none;
+}
+.node_group_0.display {
+	fill: #FF8888;
+	opacity: 0.3;
+}
+.node_group_1.display {
+	fill: #88FF88;
+	opacity: 0.3;
+}
+.node_group_2.display {
+	fill: #8888FF;
+	opacity: 0.3;
+}
+.node_group_3.display {
+	fill: #FFFF88;
+	opacity: 0.3;
+}
+.node_group_4.display {
+	fill: #88FFFF;
+	opacity: 0.3;
+}
+.node_group_5.display {
+	fill: #FF88FF;
+	opacity: 0.3;
+}
+button {
+	margin: 4px;
+	padding: 4px 8px;
+	border: none;
+	border-radius: 4px;
+	background-color: #CCCCFF;
+	box-shadow: 0px 0px 6px #EEEEEE, 2px 2px 4px #CCCCCC;
+}
+button:hover {
+	background-color: #6666FF;
+	color: white;
+	box-shadow: 4px 4px 6px #CCCCCC;
+}
+button:active {
+	background-color: #2222FF;
+	color: white;
+	box-shadow: none;
+}
+#maze {
+	width: 100vw;
+	padding: 8px;
+}
+#maze svg {
+	width: 100%;
+	height: auto;
+}
+#controls {
+	padding: 8px;
+	background-color: #EEEEFF;
+	box-shadow: 0px 0px 6px #CCCCCC;
+	position: sticky;
+	top: 0;
+	z-index: 100;
+}
+#stats {
+	display: none;
+}
+#stats.display {
+	display: inline-block;
+	margin-left: 16px;
+}
+</style>
+</head>
+<body>
+	<div id="controls">
+	<button onclick="make_maze()">Regenerate</button>
+	<button onclick="toggle_gateways()">Hint 1: Toggle Zone Gateways</button>
+	<button onclick="toggle_roots()">Hint 2: Toggle Zone Roots</button>
+	<button onclick="toggle_node_groups()">Hint 3: Toggle Zones</button>
+	<button onclick="toggle_stats()">Toggle Stats</button>
+	<button onclick="toggle_solution()">Toggle Solution</button>
+	<a id="permalink" href="">Permalink</a>
+	<label for="difficulty">Difficulty:
+		<input type="text" readonly id="difficulty"/>
+	</label>
+	<div id="stats">
+		<label for="solution_zones">Solution Zones:
+			<input type="text" readonly id="solution_zones"/>
+		</label>
+		<label for="solution_length">Solution Length:
+			<input type="text" readonly id="solution_length"/>
+	</div>
+	</div>
+	<div id="maze"><h1>Thinking...</h1></div>
+	<script>
+		const U64_CEIL = 1 << 64 - 1;
+		const WIDTH = 60;
+		const HEIGHT = 30;
+		const SCALE = 4;
+		const DIFFICULTY_BASE = Math.log(Math.sqrt(WIDTH * HEIGHT));
+		function difficulty_label(difficulty) {
+			if (difficulty < 0.8) {
+				return "Very Easy";
+			} else if (difficulty < 1.0) {
+				return "Easy";
+			} else if (difficulty < 1.3) {
+				return "Medium";
+			} else if (difficulty < 1.5) {
+				return "Hard";
+			} else {
+				return "Very Hard";
+			}
+		}
+		function make_seed() {
+			let seed = BigInt(Math.floor(Math.random() * U64_CEIL));
+			console.log(seed);
+			return seed;
+		}
+		function make_maze_inner(seed) {
+			return window.Mazer.maze_square(seed, WIDTH, HEIGHT, SCALE);
+		}
+
+		function make_maze(seed) {
+			if (typeof seed === 'undefined') {
+				seed = make_seed();
+			}
+			let mazeElement = document.getElementById('maze');
+			mazeElement.innerHTML = '<h1>Thinking...</h1>';
+			console.log("making maze");
+			let maze = make_maze_inner(seed);
+			let href = `${document.location.protocol}//${document.location.host}${document.location.pathname}?seed=${seed.toString()}`;
+			document.getElementById("permalink").href = href;
+			mazeElement.innerHTML = maze.svg;
+			document.getElementById("solution_zones").value = maze.solution_zones.toString();
+			document.getElementById("solution_length").value = maze.solution_length.toString();
+			let difficulty = Math.log(maze.solution_length) / DIFFICULTY_BASE;
+			document.getElementById("difficulty").value = `${difficulty_label(difficulty)} (${difficulty.toFixed(2)})`;
+		}
+		addEventListener("TrunkApplicationStarted", (event) => {
+			console.log("application started - bindings:", window.wasmBindings, "WASM:", event.detail.wasm);
+			let seed = document.location.search.match(/seed=(-?[0-9]+)/)?.[1] || make_seed();
+			make_maze(seed)
+		});
+		function toggle_solution() {
+			let solutions = document.getElementsByClassName("solution");
+			for (let i = 0; i < solutions.length; i++) {
+				solutions[i].classList.toggle("display");
+			}
+		}
+		function toggle_gateways() {
+			let gateways = document.getElementsByClassName("gateway");
+			for (let i = 0; i < gateways.length; i++) {
+				gateways[i].classList.toggle("display");
+			}
+		}
+		function toggle_roots() {
+			let nodes = document.getElementsByClassName("node_root");
+			for (let i = 0; i < nodes.length; i++) {
+				nodes[i].classList.toggle("display");
+			}
+		}
+		function toggle_node_groups() {
+			let nodes = document.getElementsByClassName("node");
+			for (let i = 0; i < nodes.length; i++) {
+				nodes[i].classList.toggle("display");
+			}
+		}
+		function toggle_stats() {
+			let stats = document.getElementById("stats");
+			stats.classList.toggle("display");
+		}
+	</script>
+</body>
+</html>
