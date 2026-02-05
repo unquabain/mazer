@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: "{{ .Values.network.cert_issuer }}"
+    kubernetes.io/ingress.class: "{{ .Values.network.ingress_class }}"
+  name: {{ .Chart.Name }}
+spec:
+  ingressClassName: "{{ .Values.network.ingress_class }}"
+  rules:
+  - host: "{{ .Values.network.host }}"
+    http:
+      paths:
+      - backend:
+          service:
+            name: {{ .Chart.Name }}
+            port:
+              number: {{ .Values.externalPort }}
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - mazer.4zb.org
+    secretName: {{ .Values.network.cert_secret }}

@@ -1,0 +1,12 @@
+replicas: 1
+externalPort: 80
+image:
+  registry: unquabain
+  repository: mazer
+  tag: latest
+  containerPort: 80
+network:
+  host: mazer.4zb.org
+  cert_issuer: letsencrypt-prod
+  cert_secret: ephemeral
+  ingress_class: nginx

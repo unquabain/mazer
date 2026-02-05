@@ -1,15 +1,15 @@
-FROM alpine AS rust
-RUN apk update
-RUN apk add --no-cache rustup build-base
-RUN rustup-init -y
-RUN mkdir -p /build
-WORKDIR /build
-COPY ./Cargo.toml .
-COPY ./Cargo.lock .
-COPY ./src ./src
-RUN source /root/.cargo/env && cargo build --release
+FROM rust:latest AS builder
 
-FROM scratch as runtime
-COPY --from=rust /build/target/release/mazer /mazer
-EXPOSE 8080
-CMD ["/mazer"]
+
+RUN rustup target add wasm32-unknown-unknown
+RUN cargo install --locked trunk
+
+WORKDIR /app
+COPY . .
+RUN trunk clean
+RUN trunk build --release
+
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
